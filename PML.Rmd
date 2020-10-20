@@ -1,0 +1,123 @@
+---
+title: "PML"
+author: "Varnika"
+date: "10/20/2020"
+output:
+  word_document: default
+  html_document: default
+---
+Introduction-
+  This is final course project of the practical machine learning (PML). We will be using rstudio markdown and knitr. proceeding for the analysis.
+
+Since we have collected the databases from nike, fitbit, and jawbone we will be utilizing these data for the analysis of the assignment
+
+In ths project we used data from accelerometer measure of the individuals of unique physicality
+With the exsisting data collected, we will be able to se the individuals who are doing exersises or not.
+There are 2 files 
+a)test data 
+b)training data 
+from these files we will see the number of idividuals doing exercise or not.
+
+At first we will load the data, then proceed for the processing the data and then we will do the exploratory analysis later we predict that for which model to select and then finally for the predicting of the output of the testing set
+
+
+```{r}
+library(caret)
+library(knitr)
+
+library(data.table)
+library(rpart.plot)
+library(rpart)
+
+library(gbm)
+library(ggplot2)
+
+library(corrplot)
+
+```
+the data is been taken for cleaning and exploring the data
+
+```{r}
+testUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+traUrl  <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+
+data_testing <- read.csv(url(testUrl))
+data_training <- read.csv(url(traUrl))
+
+```
+cleaning of the input data
+
+```{r}
+training_data <- data_training[, colSums(is.na(data_training)) == 0]
+testing_data <- data_testing[, colSums(is.na(data_testing)) == 0]
+
+```
+now we will prepare the data for pred. We will consider around 70% of the data for the training set and the 30% of the data for the testing data set. This testing_data is later used in twenty different cases 
+
+```{r}
+training_data <- training_data[, -c(1:7)]
+testing_data <- testing_data[, -c(1:7)]
+dim(training_data)
+
+```
+
+
+```{r}
+set.seed(1234)
+datatraining <- createDataPartition(data_training$classe, p = 0.7, list = FALSE)
+training_data <- training_data[datatraining, ]
+testing_data <- training_data[-datatraining, ]
+dim(training_data)
+dim(testing_data)
+
+```
+Variables that are nonzero are removed from the data gives
+```{r}
+none_Zero <- nearZeroVar(training_data)
+training_data <- training_data[, -none_Zero]
+testing_data <- testing_data[, -none_Zero]
+dim(training_data)
+dim(testing_data)
+
+```
+
+
+```{r}
+plot_cor <- cor(training_data[, -53])
+corrplot(plot_cor, order = "FPC", method = "color", type = "upper", tl.cex = 0.8, tl.col = rgb(0, 0, 0))
+
+```
+As you can see corr. predic. are the ones with the dark colour intersec.
+For proceeding for the model building we will use 2 different types of algorithms , trees and random forests for the prediction part 
+
+```{r}
+set.seed(20000)
+tre_dec <- rpart(classe ~ ., data=training_data, method = "class")
+rpart.plot(tre_dec)
+
+```
+Validating the model
+```{r}
+modelpre <- predict(tre_dec, testing_data, type = "class")
+ab <- confusionMatrix(modelpre, testing_data$classe)
+ab
+
+```
+
+```{r}
+plot(modelpre)
+
+```
+By applying two Models one by one
+a)boosted model
+b)gbm model
+```{r}
+set.seed(10000)
+ctrgbm <- trainControl(method = "repeatedcv", number = 5, repeats = 1)
+validgbm <- train(classe ~ .,data=training_data, method = "gbm", trControl = ctrgbm, verbose = FALSE)
+validgbm$finalModel
+
+```
+
+At last we have predicted the number of individuals who does exercise or not and then later we did a cross validation and this why I chose this specific way towards approaching and then predicted for 20.
+I have attached the link to GitHub, which contained the HTML and rmd file. Still, due to some unprecedented reason, as I could not attach the file, which consisted of the output, so I have attached the pdf file and the rmd file. Please consider the request.
